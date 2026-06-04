@@ -2,7 +2,6 @@
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_cloudflare_dns_suppression.dart';
 
@@ -52,49 +51,62 @@ Future<T> tracedCloudflareDNS<T>({
   final t = tracer ?? OTel.tracerProvider().getTracer('otel_cloudflare_dns');
   final span = t.startSpan('cfdns $operation', kind: SpanKind.client);
   try {
-    span.setStringAttribute('rpc.system', 'cloudflare');
-    span.setStringAttribute('dns.system', 'cloudflare');
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('rpc.system', 'cloudflare')]));
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('dns.system', 'cloudflare')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.zoneId != null) {
-        span.setStringAttribute('cloudflare.zone.id', res.zoneId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('cloudflare.zone.id', res.zoneId!)]));
       }
       if (res.zoneName != null) {
-        span.setStringAttribute('dns.zone', res.zoneName!);
+        span.addAttributes(
+            OTel.attributes([OTel.attributeString('dns.zone', res.zoneName!)]));
       }
       if (res.recordId != null) {
-        span.setStringAttribute('cloudflare.dns.record.id', res.recordId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('cloudflare.dns.record.id', res.recordId!)]));
       }
       if (res.recordName != null) {
-        span.setStringAttribute('dns.name', res.recordName!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('dns.name', res.recordName!)]));
       }
       if (res.recordType != null) {
-        span.setStringAttribute('dns.record.type', res.recordType!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('dns.record.type', res.recordType!)]));
       }
       if (res.proxied != null) {
-        span.setBoolAttribute('cloudflare.dns.proxied', res.proxied!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeBool('cloudflare.dns.proxied', res.proxied!)]));
       }
       if (res.ttl != null) {
-        span.setIntAttribute('dns.ttl', res.ttl!);
+        span.addAttributes(
+            OTel.attributes([OTel.attributeInt('dns.ttl', res.ttl!)]));
       }
       if (res.dnssecEnabled != null) {
-        span.setBoolAttribute('dns.dnssec.enabled', res.dnssecEnabled!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeBool('dns.dnssec.enabled', res.dnssecEnabled!)]));
       }
       if (res.statusCode != null) {
-        span.setIntAttribute('http.response.status_code', res.statusCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
       }
       if (res.errorCode != null) {
-        span.setStringAttribute('cfdns.error.code', res.errorCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('cfdns.error.code', res.errorCode!)]));
       }
-      final fail =
-          res.errorCode != null ||
+      final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.setStringAttribute(
-          ErrorResource.errorType.key,
-          res.errorCode ?? 'cloudflare_dns.error',
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            ErrorResource.errorType.key,
+            res.errorCode ?? 'cloudflare_dns.error',
+          )
+        ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
     }
